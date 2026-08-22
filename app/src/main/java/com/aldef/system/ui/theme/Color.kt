@@ -2,39 +2,30 @@ package com.aldef.system.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Premium Dark Theme Colors
-val DarkBackground = Color(0xFF0A0A0F)
-val DarkSurface = Color(0xFF12121A)
-val DarkCard = Color(0xFF1A1A2E)
-val DarkCardLight = Color(0xFF222240)
+// Palet diambil dari logo Aldef Tech: neon jingga -> magenta -> violet -> cyan
+// di atas latar hitam pekat.
 
-// Accent Colors - Premium Gold & Blue
-val PremiumGold = Color(0xFFD4AF37)
-val PremiumGoldLight = Color(0xFFF0D060)
-val PremiumGoldDark = Color(0xFFB8941F)
-val PremiumBlue = Color(0xFF4A90D9)
-val PremiumBlueLight = Color(0xFF6BB3FF)
-val PremiumPurple = Color(0xFF8B5CF6)
-val PremiumPurpleLight = Color(0xFFA78BFA)
-val PremiumCyan = Color(0xFF06B6D4)
-val PremiumGreen = Color(0xFF10B981)
-val PremiumRed = Color(0xFFEF4444)
-val PremiumOrange = Color(0xFFF59E0B)
+val Ink = Color(0xFF05060A)
+val InkDeep = Color(0xFF020306)
+val Surface1 = Color(0xFF0B0D14)
+val Surface2 = Color(0xFF11141D)
+val Surface3 = Color(0xFF181C28)
+val Hairline = Color(0xFF232838)
 
-// Text Colors
-val TextWhite = Color(0xFFFFFFFF)
-val TextGray = Color(0xFF9CA3AF)
-val TextGrayLight = Color(0xFFD1D5DB)
-val TextGrayDark = Color(0xFF6B7280)
+val NeonOrange = Color(0xFFFF7A18)
+val NeonAmber = Color(0xFFFFB020)
+val NeonMagenta = Color(0xFFC724FF)
+val NeonViolet = Color(0xFF7B2BFF)
+val NeonCyan = Color(0xFF22D3EE)
+val NeonBlue = Color(0xFF2E7DFF)
+val NeonGreen = Color(0xFF16E0A3)
+val NeonRed = Color(0xFFFF4D6D)
 
-// Gradient Colors
-val GradientStart = Color(0xFF667eea)
-val GradientEnd = Color(0xFF764ba2)
-val GoldGradientStart = Color(0xFFD4AF37)
-val GoldGradientEnd = Color(0xFFF0D060)
-val BlueGradientStart = Color(0xFF4A90D9)
-val BlueGradientEnd = Color(0xFF6BB3FF)
+val TextPrimary = Color(0xFFF3F5FA)
+val TextSecondary = Color(0xFF9AA3B8)
+val TextMuted = Color(0xFF5C6478)
 
-// QRIS Colors
-val QRISGreen = Color(0xFF00AA13)
-val QRISBlue = Color(0xFF0066B3)
+/** Gradien tanda tangan merek — dipakai untuk judul, tombol utama, dan garis aksen. */
+val BrandSweep = listOf(NeonOrange, NeonMagenta, NeonViolet, NeonCyan)
+val WarmSweep = listOf(NeonAmber, NeonOrange, NeonMagenta)
+val CoolSweep = listOf(NeonCyan, NeonBlue, NeonViolet)

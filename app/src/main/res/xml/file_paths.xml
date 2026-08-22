@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-    <files-path
-        name="hidden"
-        path="hidden/" />
-    <external-files-path
-        name="external_hidden"
-        path="." />
+    <!-- Hanya folder cache tempat berkas brankas didekripsi sementara yang
+         dibagikan; direktori .vault yang terenkripsi tidak pernah diekspos. -->
+    <cache-path
+        name="vault_open"
+        path="vault_open/" />
 </paths>

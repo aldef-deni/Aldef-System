@@ -1,394 +1,385 @@
 package com.aldef.system.ui.screens
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.*
-import androidx.compose.foundation.layout.*
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.Calculate
+import androidx.compose.material.icons.rounded.Explore
+import androidx.compose.material.icons.rounded.Logout
+import androidx.compose.material.icons.rounded.QrCodeScanner
+import androidx.compose.material.icons.rounded.Speed
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.*
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.*
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.*
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.aldef.system.R
+import com.aldef.system.data.AppPrefs
 import com.aldef.system.data.Screen
-import com.aldef.system.ui.theme.*
+import com.aldef.system.ui.components.AuroraBackground
+import com.aldef.system.ui.components.CircleIconButton
+import com.aldef.system.ui.components.GlassCard
+import com.aldef.system.ui.components.GradientDivider
+import com.aldef.system.ui.components.SectionLabel
+import com.aldef.system.ui.theme.BrandSweep
+import com.aldef.system.ui.theme.NeonAmber
+import com.aldef.system.ui.theme.NeonCyan
+import com.aldef.system.ui.theme.NeonGreen
+import com.aldef.system.ui.theme.NeonMagenta
+import com.aldef.system.ui.theme.NeonOrange
+import com.aldef.system.ui.theme.NeonViolet
+import com.aldef.system.ui.theme.NumericFont
+import com.aldef.system.ui.theme.Surface1
+import com.aldef.system.ui.theme.TextMuted
+import com.aldef.system.ui.theme.TextPrimary
+import com.aldef.system.ui.theme.TextSecondary
+import kotlinx.coroutines.delay
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+private data class Feature(
+    val title: String,
+    val subtitle: String,
+    val icon: ImageVector,
+    val accent: List<Color>,
+    val route: String
+)
+
 @Composable
 fun HomeScreen(navController: NavController) {
-    var visible by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val prefs = remember { AppPrefs(context) }
 
+    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) {
-        delay(100)
-        visible = true
+        while (true) {
+            now = System.currentTimeMillis()
+            delay(1_000)
+        }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    Brush.linearGradient(
-                                        colors = listOf(PremiumGold, PremiumGoldDark)
-                                    )
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                "A",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Black,
-                                color = DarkBackground
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                "Aldef System",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = PremiumGold
-                            )
-                            Text(
-                                "Premium Tools",
-                                fontSize = 11.sp,
-                                color = TextGray
-                            )
-                        }
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { navController.navigate(Screen.Login.route) }) {
-                        Icon(
-                            Icons.Outlined.Logout,
-                            contentDescription = "Logout",
-                            tint = TextGray
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = DarkBackground
-                )
+    val locale = remember { Locale("in", "ID") }
+    val timeFormat = remember { SimpleDateFormat("HH:mm", locale) }
+    val secondFormat = remember { SimpleDateFormat("ss", locale) }
+    val dateFormat = remember { SimpleDateFormat("EEEE, d MMMM yyyy", locale) }
+    val date = Date(now)
+
+    val greeting = remember(now / 60_000) {
+        val hour = Calendar.getInstance().apply { timeInMillis = now }.get(Calendar.HOUR_OF_DAY)
+        when (hour) {
+            in 4..10 -> "Selamat pagi"
+            in 11..14 -> "Selamat siang"
+            in 15..18 -> "Selamat sore"
+            else -> "Selamat malam"
+        }
+    }
+
+    val features = remember {
+        listOf(
+            Feature(
+                "QRIS",
+                "Pindai & baca kode",
+                Icons.Rounded.QrCodeScanner,
+                listOf(NeonOrange, NeonAmber),
+                Screen.Qris.route
+            ),
+            Feature(
+                "Kompas",
+                "Arah mata angin",
+                Icons.Rounded.Explore,
+                listOf(NeonCyan, NeonGreen),
+                Screen.Compass.route
+            ),
+            Feature(
+                "Kalkulator",
+                "Hitung & brankas",
+                Icons.Rounded.Calculate,
+                listOf(NeonViolet, NeonMagenta),
+                Screen.Calculator.route
+            ),
+            Feature(
+                "Speedometer",
+                "Kecepatan GPS",
+                Icons.Rounded.Speed,
+                listOf(NeonMagenta, NeonOrange),
+                Screen.Speedometer.route
             )
-        },
-        containerColor = DarkBackground
-    ) { paddingValues ->
+        )
+    }
+
+    AuroraBackground(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp)
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .padding(horizontal = 22.dp)
         ) {
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(Modifier.height(18.dp))
 
-            // Welcome Card
-            AnimatedVisibility(
-                visible = visible,
-                enter = fadeIn(tween(600)) + slideInVertically(tween(600))
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(
-                            Brush.linearGradient(
-                                colors = listOf(
-                                    PremiumGold.copy(alpha = 0.15f),
-                                    DarkCard
-                                ),
-                                start = Offset(0f, 0f),
-                                end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
-                            )
-                        )
-                        .border(
-                            1.dp,
-                            PremiumGold.copy(alpha = 0.2f),
-                            RoundedCornerShape(20.dp)
-                        )
-                        .padding(20.dp)
-                ) {
-                    Column {
-                        Text(
-                            text = "Selamat Datang 👋",
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = TextWhite
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Pilih tool yang ingin Anda gunakan",
-                            fontSize = 14.sp,
-                            color = TextGray
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                text = "TOOLS",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = PremiumGold,
-                letterSpacing = 3.sp,
-                modifier = Modifier.padding(start = 4.dp)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Feature Grid
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                AnimatedVisibility(
-                    visible = visible,
-                    enter = fadeIn(tween(500, delayMillis = 200)) + slideInVertically(
-                        tween(500, delayMillis = 200),
-                        initialOffsetY = { it / 2 }
-                    )
-                ) {
-                    FeatureCard(
-                        modifier = Modifier.weight(1f),
-                        title = "QRIS Scanner",
-                        subtitle = "Scan kode QR",
-                        icon = Icons.Filled.QrCodeScanner,
-                        gradientColors = listOf(PremiumGreen, Color(0xFF059669)),
-                        onClick = { navController.navigate(Screen.QRIS.route) }
-                    )
-                }
-
-                AnimatedVisibility(
-                    visible = visible,
-                    enter = fadeIn(tween(500, delayMillis = 350)) + slideInVertically(
-                        tween(500, delayMillis = 350),
-                        initialOffsetY = { it / 2 }
-                    )
-                ) {
-                    FeatureCard(
-                        modifier = Modifier.weight(1f),
-                        title = "Kompas",
-                        subtitle = "Arah & orientasi",
-                        icon = Icons.Filled.Explore,
-                        gradientColors = listOf(PremiumBlue, PremiumPurple),
-                        onClick = { navController.navigate(Screen.Compass.route) }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                AnimatedVisibility(
-                    visible = visible,
-                    enter = fadeIn(tween(500, delayMillis = 500)) + slideInVertically(
-                        tween(500, delayMillis = 500),
-                        initialOffsetY = { it / 2 }
-                    )
-                ) {
-                    FeatureCard(
-                        modifier = Modifier.weight(1f),
-                        title = "Kalkulator",
-                        subtitle = "Hitung & simpan",
-                        icon = Icons.Filled.Calculate,
-                        gradientColors = listOf(PremiumPurple, PremiumPurpleLight),
-                        onClick = { navController.navigate(Screen.Calculator.route) }
-                    )
-                }
-
-                AnimatedVisibility(
-                    visible = visible,
-                    enter = fadeIn(tween(500, delayMillis = 650)) + slideInVertically(
-                        tween(500, delayMillis = 650),
-                        initialOffsetY = { it / 2 }
-                    )
-                ) {
-                    FeatureCard(
-                        modifier = Modifier.weight(1f),
-                        title = "Speedometer",
-                        subtitle = "Kecepatan GPS",
-                        icon = Icons.Filled.Speed,
-                        gradientColors = listOf(PremiumRed, PremiumOrange),
-                        onClick = { navController.navigate(Screen.Speedometer.route) }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Hidden Files button
-            AnimatedVisibility(
-                visible = visible,
-                enter = fadeIn(tween(500, delayMillis = 800)) + slideInVertically(
-                    tween(500, delayMillis = 800),
-                    initialOffsetY = { it / 2 }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Image(
+                    painter = painterResource(R.drawable.aldef_logo_landscape),
+                    contentDescription = stringResource(R.string.logo_desc),
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.width(132.dp)
                 )
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(
-                            Brush.linearGradient(
-                                colors = listOf(
-                                    DarkCardLight,
-                                    DarkCard
-                                )
-                            )
-                        )
-                        .border(
-                            1.dp,
-                            PremiumGold.copy(alpha = 0.15f),
-                            RoundedCornerShape(20.dp)
-                        )
-                        .clickable { navController.navigate(Screen.HiddenFiles.route) }
-                        .padding(20.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(
-                                    Brush.linearGradient(
-                                        colors = listOf(
-                                            PremiumGold.copy(alpha = 0.2f),
-                                            PremiumGold.copy(alpha = 0.05f)
-                                        )
-                                    )
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                Icons.Filled.Lock,
-                                contentDescription = null,
-                                tint = PremiumGold,
-                                modifier = Modifier.size(24.dp)
+                Spacer(Modifier.weight(1f))
+                CircleIconButton(
+                    icon = Icons.Rounded.Logout,
+                    contentDescription = "Keluar",
+                    onClick = {
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(Screen.Home.route) { inclusive = true }
+                        }
+                    }
+                )
+            }
+
+            Spacer(Modifier.height(26.dp))
+
+            Text(
+                text = greeting + ",",
+                style = MaterialTheme.typography.bodyMedium,
+                color = TextSecondary
+            )
+            Text(
+                text = prefs.displayName,
+                style = MaterialTheme.typography.displayMedium,
+                color = TextPrimary
+            )
+
+            Spacer(Modifier.height(20.dp))
+
+            ClockCard(
+                time = timeFormat.format(date),
+                seconds = secondFormat.format(date),
+                date = dateFormat.format(date).replaceFirstChar { it.uppercase() }
+            )
+
+            Spacer(Modifier.height(28.dp))
+
+            SectionLabel("Modul")
+            Spacer(Modifier.height(12.dp))
+
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                features.chunked(2).forEach { pair ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                        pair.forEach { feature ->
+                            FeatureCard(
+                                feature = feature,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .aspectRatio(0.96f),
+                                onClick = { navController.navigate(feature.route) }
                             )
                         }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "File Tersembunyi",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = TextWhite
-                            )
-                            Text(
-                                text = "Kunci & sembunyikan file",
-                                fontSize = 12.sp,
-                                color = TextGray
-                            )
-                        }
-                        Icon(
-                            Icons.Filled.ChevronRight,
-                            contentDescription = null,
-                            tint = TextGray
-                        )
+                        if (pair.size == 1) Spacer(Modifier.weight(1f))
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(Modifier.height(28.dp))
 
-            // Version info
-            Text(
-                text = "Aldef System v1.0.0",
-                fontSize = 11.sp,
-                color = TextGrayDark,
+            GradientDivider()
+
+            Spacer(Modifier.height(16.dp))
+
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center
-            )
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "ALDEF SYSTEM",
+                        color = TextSecondary,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 2.sp
+                    )
+                    Spacer(Modifier.height(3.dp))
+                    Text(
+                        text = "4 modul aktif  ·  v1.0.0",
+                        color = TextMuted,
+                        fontSize = 10.sp
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        Modifier
+                            .size(7.dp)
+                            .clip(CircleShape)
+                            .background(NeonGreen)
+                    )
+                    Spacer(Modifier.width(7.dp))
+                    Text("SISTEM SIAP", color = NeonGreen, fontSize = 10.sp, letterSpacing = 1.4.sp)
+                }
+            }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(28.dp))
         }
     }
 }
 
 @Composable
-fun FeatureCard(
-    modifier: Modifier = Modifier,
-    title: String,
-    subtitle: String,
-    icon: ImageVector,
-    gradientColors: List<Color>,
-    onClick: () -> Unit
-) {
-    Box(
-        modifier = modifier
-            .height(160.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .background(
-                Brush.linearGradient(
-                    colors = gradientColors.map { it.copy(alpha = 0.15f) } + listOf(DarkCard)
+private fun ClockCard(time: String, seconds: String, date: String) {
+    val shimmer = rememberInfiniteTransition(label = "clockShimmer")
+    val phase by shimmer.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(6000, easing = LinearEasing)),
+        label = "clockPhase"
+    )
+
+    GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(26.dp),
+        borderTint = listOf(
+            NeonOrange.copy(alpha = 0.30f * (1f - phase) + 0.08f),
+            NeonViolet.copy(alpha = 0.22f),
+            NeonCyan.copy(alpha = 0.30f * phase + 0.08f)
+        )
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 22.dp, vertical = 20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text(
+                        text = time,
+                        fontFamily = NumericFont,
+                        fontSize = 40.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary
+                    )
+                    Spacer(Modifier.width(5.dp))
+                    Text(
+                        text = seconds,
+                        fontFamily = NumericFont,
+                        fontSize = 15.sp,
+                        color = NeonOrange,
+                        modifier = Modifier.padding(bottom = 7.dp)
+                    )
+                }
+                Spacer(Modifier.height(2.dp))
+                Text(text = date, color = TextSecondary, fontSize = 12.sp)
+            }
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(Brush.linearGradient(BrandSweep.map { it.copy(alpha = 0.22f) })),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "A",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Black,
+                    color = TextPrimary
                 )
-            )
-            .border(
-                1.dp,
-                gradientColors.first().copy(alpha = 0.2f),
-                RoundedCornerShape(20.dp)
-            )
-            .clickable { onClick() }
-            .padding(16.dp)
+            }
+        }
+    }
+}
+
+@Composable
+private fun FeatureCard(feature: Feature, modifier: Modifier, onClick: () -> Unit) {
+    GlassCard(
+        modifier = modifier,
+        shape = RoundedCornerShape(24.dp),
+        borderTint = feature.accent.map { it.copy(alpha = 0.30f) },
+        fill = listOf(
+            feature.accent.first().copy(alpha = 0.10f),
+            Surface1.copy(alpha = 0.95f)
+        ),
+        onClick = onClick
     ) {
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(18.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Box(
                 modifier = Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(
-                        Brush.linearGradient(
-                            colors = gradientColors.map { it.copy(alpha = 0.3f) }
-                        )
-                    ),
+                    .size(46.dp)
+                    .clip(RoundedCornerShape(15.dp))
+                    .background(Brush.linearGradient(feature.accent.map { it.copy(alpha = 0.22f) })),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    icon,
-                    contentDescription = null,
-                    tint = gradientColors.first(),
+                    imageVector = feature.icon,
+                    contentDescription = feature.title,
+                    tint = feature.accent.first(),
                     modifier = Modifier.size(24.dp)
                 )
             }
 
             Column {
                 Text(
-                    text = title,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextWhite
+                    text = feature.title,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = TextPrimary
                 )
+                Spacer(Modifier.height(3.dp))
                 Text(
-                    text = subtitle,
-                    fontSize = 11.sp,
-                    color = TextGray
+                    text = feature.subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TextMuted
+                )
+                Spacer(Modifier.height(10.dp))
+                Box(
+                    Modifier
+                        .width(34.dp)
+                        .height(2.dp)
+                        .clip(RoundedCornerShape(1.dp))
+                        .background(Brush.horizontalGradient(feature.accent))
                 )
             }
         }

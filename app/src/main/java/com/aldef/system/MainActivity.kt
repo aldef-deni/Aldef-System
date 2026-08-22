@@ -1,44 +1,38 @@
 package com.aldef.system
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.*
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.fragment.app.FragmentActivity
 import androidx.navigation.compose.rememberNavController
 import com.aldef.system.navigation.AldefNavGraph
 import com.aldef.system.ui.theme.AldefSystemTheme
 
-class MainActivity : ComponentActivity() {
+/**
+ * FragmentActivity, bukan ComponentActivity: BiometricPrompt menuntut host
+ * berbasis fragment untuk menampilkan dialog sistemnya.
+ */
+class MainActivity : FragmentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        val splashScreen = installSplashScreen()
+        // Splash bawaan sistem hanya jembatan sepersekian detik; animasi
+        // sebenarnya digambar oleh SplashScreen berbasis Compose.
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        var keepSplashScreen by mutableStateOf(true)
-
-        splashScreen.setKeepOnScreenCondition {
-            keepSplashScreen
-        }
-
         setContent {
             AldefSystemTheme {
-                LaunchedEffect(Unit) {
-                    kotlinx.coroutines.delay(1500)
-                    keepSplashScreen = false
-                }
-
-                val navController = rememberNavController()
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AldefNavGraph(navController = navController)
+                    AldefNavGraph(navController = rememberNavController())
                 }
             }
         }
