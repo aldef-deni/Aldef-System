@@ -16,10 +16,9 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -61,13 +60,14 @@ import com.aldef.system.ui.components.AuroraBackground
 import com.aldef.system.ui.components.CircleIconButton
 import com.aldef.system.ui.components.GlassCard
 import com.aldef.system.ui.components.GradientDivider
-import com.aldef.system.ui.components.SectionLabel
+import com.aldef.system.ui.components.rememberIsOnline
 import com.aldef.system.ui.theme.BrandSweep
 import com.aldef.system.ui.theme.NeonAmber
 import com.aldef.system.ui.theme.NeonCyan
 import com.aldef.system.ui.theme.NeonGreen
 import com.aldef.system.ui.theme.NeonMagenta
 import com.aldef.system.ui.theme.NeonOrange
+import com.aldef.system.ui.theme.NeonRed
 import com.aldef.system.ui.theme.NeonViolet
 import com.aldef.system.ui.theme.NumericFont
 import com.aldef.system.ui.theme.Surface1
@@ -92,6 +92,7 @@ private data class Feature(
 fun HomeScreen(navController: NavController) {
     val context = LocalContext.current
     val prefs = remember { AppPrefs(context) }
+    val isOnline = rememberIsOnline()
 
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) {
@@ -121,7 +122,7 @@ fun HomeScreen(navController: NavController) {
         listOf(
             Feature(
                 "QRIS",
-                "Pindai & baca kode",
+                "Scan & baca QR",
                 Icons.Rounded.QrCodeScanner,
                 listOf(NeonOrange, NeonAmber),
                 Screen.Qris.route
@@ -135,7 +136,7 @@ fun HomeScreen(navController: NavController) {
             ),
             Feature(
                 "Kalkulator",
-                "Hitung & brankas",
+                "Perhitungan Angka",
                 Icons.Rounded.Calculate,
                 listOf(NeonViolet, NeonMagenta),
                 Screen.Calculator.route
@@ -154,9 +155,8 @@ fun HomeScreen(navController: NavController) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .safeDrawingPadding()
                 .verticalScroll(rememberScrollState())
-                .statusBarsPadding()
-                .navigationBarsPadding()
                 .padding(horizontal = 22.dp)
         ) {
             Spacer(Modifier.height(18.dp))
@@ -203,9 +203,6 @@ fun HomeScreen(navController: NavController) {
 
             Spacer(Modifier.height(28.dp))
 
-            SectionLabel("Modul")
-            Spacer(Modifier.height(12.dp))
-
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 features.chunked(2).forEach { pair ->
                     Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -234,30 +231,28 @@ fun HomeScreen(navController: NavController) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
-                    Text(
-                        text = "ALDEF SYSTEM",
-                        color = TextSecondary,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        letterSpacing = 2.sp
-                    )
-                    Spacer(Modifier.height(3.dp))
-                    Text(
-                        text = "4 modul aktif  ·  v1.0.0",
-                        color = TextMuted,
-                        fontSize = 10.sp
-                    )
-                }
+                Text(
+                    text = "ALDEF SYSTEM",
+                    color = TextSecondary,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 2.sp
+                )
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    val statusColor = if (isOnline) NeonGreen else NeonRed
                     Box(
                         Modifier
                             .size(7.dp)
                             .clip(CircleShape)
-                            .background(NeonGreen)
+                            .background(statusColor)
                     )
                     Spacer(Modifier.width(7.dp))
-                    Text("SISTEM SIAP", color = NeonGreen, fontSize = 10.sp, letterSpacing = 1.4.sp)
+                    Text(
+                        text = if (isOnline) "SISTEM ONLINE" else "SISTEM OFFLINE",
+                        color = statusColor,
+                        fontSize = 10.sp,
+                        letterSpacing = 1.4.sp
+                    )
                 }
             }
 

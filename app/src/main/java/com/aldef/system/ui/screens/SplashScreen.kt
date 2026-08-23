@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -61,7 +62,6 @@ import com.aldef.system.ui.theme.NeonMagenta
 import com.aldef.system.ui.theme.NeonOrange
 import com.aldef.system.ui.theme.NeonViolet
 import com.aldef.system.ui.theme.Surface2
-import com.aldef.system.ui.theme.TextMuted
 import com.aldef.system.ui.theme.TextSecondary
 import kotlinx.coroutines.delay
 
@@ -202,22 +202,13 @@ fun SplashScreen(navController: NavController) {
                 visible = showTagline,
                 enter = fadeIn(tween(700)) + slideInVertically(tween(700)) { it / 3 }
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = "S Y S T E M",
-                        color = TextSecondary,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Light,
-                        letterSpacing = 7.sp
-                    )
-                    Spacer(Modifier.height(10.dp))
-                    Text(
-                        text = "QRIS  ·  KOMPAS  ·  KALKULATOR  ·  SPEEDOMETER",
-                        color = TextMuted,
-                        fontSize = 9.sp,
-                        letterSpacing = 1.6.sp
-                    )
-                }
+                Text(
+                    text = "S Y S T E M",
+                    color = TextSecondary,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Light,
+                    letterSpacing = 7.sp
+                )
             }
         }
 
@@ -225,7 +216,8 @@ fun SplashScreen(navController: NavController) {
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 56.dp)
+                .navigationBarsPadding()
+                .padding(bottom = 48.dp)
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -243,13 +235,6 @@ fun SplashScreen(navController: NavController) {
                         .background(Brush.horizontalGradient(BrandSweep))
                 )
             }
-            Spacer(Modifier.height(14.dp))
-            Text(
-                text = "v1.0.0  ·  PERSONAL EDITION",
-                color = TextMuted,
-                fontSize = 9.sp,
-                letterSpacing = 2.sp
-            )
         }
     }
 }

@@ -24,11 +24,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -98,8 +96,8 @@ import com.aldef.system.ui.theme.Surface1
 import com.aldef.system.ui.theme.Surface2
 import com.aldef.system.ui.theme.TextMuted
 import com.aldef.system.ui.theme.TextPrimary
-import com.aldef.system.ui.theme.TextSecondary
 import kotlinx.coroutines.launch
+import java.util.Calendar
 
 /**
  * Gerbang aplikasi: nama pengguna + kata sandi, dengan biometrik sebagai
@@ -121,6 +119,7 @@ fun LoginScreen(navController: NavController) {
     var passwordVisible by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<Pair<String, Boolean>?>(null) } // teks ke apakah-error
     var enrolled by remember { mutableStateOf(prefs.biometricEnrolled) }
+    val currentYear = remember { Calendar.getInstance().get(Calendar.YEAR) }
     var biometricStatus by remember { mutableStateOf(biometric.status()) }
 
     // Getaran halus saat kredensial ditolak.
@@ -236,10 +235,8 @@ fun LoginScreen(navController: NavController) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .safeDrawingPadding()
                 .verticalScroll(rememberScrollState())
-                .statusBarsPadding()
-                .navigationBarsPadding()
-                .imePadding()
                 .padding(horizontal = 26.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -252,15 +249,6 @@ fun LoginScreen(navController: NavController) {
                 modifier = Modifier
                     .fillMaxWidth(0.62f)
                     .graphicsLayer { alpha = 0.96f }
-            )
-
-            Spacer(Modifier.height(10.dp))
-
-            Text(
-                text = "SISTEM PRIBADI TERKUNCI",
-                color = TextMuted,
-                fontSize = 10.sp,
-                letterSpacing = 3.sp
             )
 
             Spacer(Modifier.height(34.dp))
@@ -277,20 +265,6 @@ fun LoginScreen(navController: NavController) {
                 )
             ) {
                 Column(Modifier.padding(horizontal = 22.dp, vertical = 26.dp)) {
-                    Text(
-                        text = "Masuk",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = TextPrimary
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = "Akses ke QRIS, Kompas, Kalkulator, dan Speedometer",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = TextSecondary
-                    )
-
-                    Spacer(Modifier.height(22.dp))
-
                     PremiumField(
                         value = username,
                         onValueChange = { username = it; message = null },
@@ -411,7 +385,7 @@ fun LoginScreen(navController: NavController) {
             Spacer(Modifier.height(28.dp))
 
             Text(
-                text = "ALDEF TECH  ·  PERSONAL EDITION  ·  v1.0.0",
+                text = "ALDEF SYSTEM © $currentYear",
                 color = TextMuted.copy(alpha = 0.7f),
                 fontSize = 9.sp,
                 letterSpacing = 1.8.sp

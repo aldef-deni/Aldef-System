@@ -23,7 +23,7 @@ class AppPrefs(context: Context) {
 
     /** Nama yang disapa di dasbor. */
     var displayName: String
-        get() = prefs.getString(KEY_NAME, "Aldef") ?: "Aldef"
+        get() = prefs.getString(KEY_NAME, DEFAULT_NAME) ?: DEFAULT_NAME
         set(value) = prefs.edit().putString(KEY_NAME, value).apply()
 
     /** true = km/jam, false = mil/jam. */
@@ -85,5 +85,6 @@ class AppPrefs(context: Context) {
         const val KEY_PIN_HASH = "vault_pin_hash"
         const val KEY_PIN_SALT = "vault_pin_salt"
         const val DEFAULT_PIN = "1974"
+        const val DEFAULT_NAME = "Deni Afrizal"
     }
 }
