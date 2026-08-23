@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Calculate
+import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Explore
 import androidx.compose.material.icons.rounded.Logout
 import androidx.compose.material.icons.rounded.QrCodeScanner
@@ -63,6 +64,7 @@ import com.aldef.system.ui.components.GradientDivider
 import com.aldef.system.ui.components.rememberIsOnline
 import com.aldef.system.ui.theme.BrandSweep
 import com.aldef.system.ui.theme.NeonAmber
+import com.aldef.system.ui.theme.NeonBlue
 import com.aldef.system.ui.theme.NeonCyan
 import com.aldef.system.ui.theme.NeonGreen
 import com.aldef.system.ui.theme.NeonMagenta
@@ -147,6 +149,13 @@ fun HomeScreen(navController: NavController) {
                 Icons.Rounded.Speed,
                 listOf(NeonMagenta, NeonOrange),
                 Screen.Speedometer.route
+            ),
+            Feature(
+                "Kalender",
+                "Libur nasional",
+                Icons.Rounded.CalendarMonth,
+                listOf(NeonBlue, NeonCyan),
+                Screen.Calendar.route
             )
         )
     }

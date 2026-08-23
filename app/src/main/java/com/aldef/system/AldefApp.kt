@@ -3,6 +3,7 @@ package com.aldef.system
 import android.app.Application
 import com.aldef.system.applock.AppLockState
 import com.aldef.system.applock.service.AppLockService
+import com.aldef.system.notify.HolidayReminder
 import com.aldef.system.security.VaultRepository
 import com.aldef.system.security.VaultSession
 
@@ -15,6 +16,8 @@ class AldefApp : Application() {
         // Lanjutkan proteksi aplikasi kalau ada yang terkunci dan izinnya masih
         // lengkap (mis. setelah proses aplikasi dimulai ulang).
         runCatching { AppLockService.sync(this) }
+        // Jadwalkan pengingat H-1 libur nasional.
+        runCatching { HolidayReminder.schedule(this) }
         // Sisa berkas brankas yang sempat didekripsi pada sesi sebelumnya
         // (misalnya aplikasi ditutup paksa) dibersihkan saat proses baru mulai.
         VaultSession.lock()

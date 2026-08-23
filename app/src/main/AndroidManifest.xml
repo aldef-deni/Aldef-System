@@ -70,6 +70,11 @@
             </intent-filter>
         </receiver>
 
+        <!-- Alarm harian pengingat H-1 libur nasional. -->
+        <receiver
+            android:name=".notify.HolidayAlarmReceiver"
+            android:exported="false" />
+
         <!-- Device Admin/Owner: proteksi uninstall & sembunyikan aplikasi. -->
         <receiver
             android:name=".applock.AldefDeviceAdminReceiver"

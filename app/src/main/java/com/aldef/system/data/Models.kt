@@ -17,5 +17,6 @@ sealed class Screen(val route: String) {
     data object Compass : Screen("compass")
     data object Calculator : Screen("calculator")
     data object Speedometer : Screen("speedometer")
+    data object Calendar : Screen("calendar")
     data object Vault : Screen("vault")
 }

@@ -12,6 +12,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.aldef.system.data.Screen
 import com.aldef.system.ui.screens.CalculatorScreen
+import com.aldef.system.ui.screens.CalendarScreen
 import com.aldef.system.ui.screens.CompassScreen
 import com.aldef.system.ui.screens.HomeScreen
 import com.aldef.system.ui.screens.LoginScreen
@@ -71,6 +72,7 @@ fun AldefNavGraph(navController: NavHostController) {
         composable(Screen.Compass.route) { CompassScreen(navController) }
         composable(Screen.Calculator.route) { CalculatorScreen(navController) }
         composable(Screen.Speedometer.route) { SpeedometerScreen(navController) }
+        composable(Screen.Calendar.route) { CalendarScreen(navController) }
         composable(Screen.Vault.route) { VaultScreen(navController) }
     }
 }
