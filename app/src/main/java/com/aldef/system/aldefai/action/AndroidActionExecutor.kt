@@ -16,6 +16,7 @@ import com.aldef.system.aldefai.intent.AppTarget
 import com.aldef.system.aldefai.intent.DeviceAction
 import com.aldef.system.aldefai.intent.FeatureTarget
 import com.aldef.system.aldefai.intent.NavTarget
+import com.aldef.system.aldefai.intent.VolumeMode
 import com.aldef.system.MainActivity
 
 /**
@@ -34,6 +35,7 @@ class AndroidActionExecutor(context: Context) : ALDEFAIActionExecutor {
         is ALDEFAIIntent.OpenApp -> openApp(intent.app)
         is ALDEFAIIntent.Navigate -> navigate(intent.target)
         is ALDEFAIIntent.Device -> device(intent.action)
+        is ALDEFAIIntent.SetVolume -> setVolumePercent(intent.percent, intent.mode)
         is ALDEFAIIntent.Weather -> ALDEFAIActionResult(true, WeatherSpeaker.describe(app), closePanel = false)
         is ALDEFAIIntent.TellTime -> ALDEFAIActionResult(true, tellTime(), closePanel = false)
         is ALDEFAIIntent.TellDate -> ALDEFAIActionResult(true, tellDate(), closePanel = false)
@@ -164,6 +166,28 @@ class AndroidActionExecutor(context: Context) : ALDEFAIActionExecutor {
     private fun tellDay(): String {
         val fmt = SimpleDateFormat("EEEE", Locale("in", "ID"))
         return "Hari ini hari ${fmt.format(Date())}."
+    }
+
+    private fun setVolumePercent(percent: Int, mode: VolumeMode): ALDEFAIActionResult {
+        val audio = app.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+            ?: return ALDEFAIActionResult(false, "Tidak bisa mengatur volume.", closePanel = false)
+        val stream = AudioManager.STREAM_MUSIC
+        val max = audio.getStreamMaxVolume(stream)
+        val current = audio.getStreamVolume(stream)
+        val delta = Math.round(max * percent / 100f)
+        val target = when (mode) {
+            VolumeMode.SET -> Math.round(max * percent / 100f)
+            VolumeMode.RAISE -> current + delta
+            VolumeMode.LOWER -> current - delta
+        }.coerceIn(0, max)
+        runCatching { audio.setStreamVolume(stream, target, AudioManager.FLAG_SHOW_UI) }
+        val actual = if (max == 0) 0 else Math.round(target * 100f / max)
+        val verb = when (mode) {
+            VolumeMode.SET -> "disetel ke"
+            VolumeMode.RAISE -> "dinaikkan ke"
+            VolumeMode.LOWER -> "diturunkan ke"
+        }
+        return ALDEFAIActionResult(true, "Baik, volume $verb $actual persen.")
     }
 
     private fun adjustVolume(direction: Int) {

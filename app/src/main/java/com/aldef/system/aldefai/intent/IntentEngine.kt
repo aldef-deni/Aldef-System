@@ -67,8 +67,17 @@ class IntentEngine : ALDEFIntentClassifier {
         if (has("hari")) return ALDEFAIIntent.TellDay(conf(0.85f))
         // 6. Volume.
         if (has("volume", "suara", "audio")) {
-            val up = has("naik", "naikkan", "keras", "besar", "tambah", "tinggi", "gede")
-            val down = has("turun", "turunkan", "kecil", "pelan", "kurang", "kurangi", "rendah")
+            val up = has("naik", "naikkan", "keras", "besar", "besarkan", "tambah", "tinggi", "gede")
+            val down = has("turun", "turunkan", "kecil", "kecilkan", "pelan", "kurang", "kurangi", "rendah")
+            val percent = parsePercent(text)
+            if (percent != null) {
+                val mode = when {
+                    down -> VolumeMode.LOWER
+                    up -> VolumeMode.RAISE
+                    else -> VolumeMode.SET
+                }
+                return ALDEFAIIntent.SetVolume(percent, mode, 0.92f)
+            }
             if (up) return ALDEFAIIntent.Device(DeviceAction.VOLUME_UP, 0.9f)
             if (down) return ALDEFAIIntent.Device(DeviceAction.VOLUME_DOWN, 0.9f)
         }
@@ -90,6 +99,18 @@ class IntentEngine : ALDEFIntentClassifier {
         }
 
         return ALDEFAIIntent.Unknown(text)
+    }
+
+    /** Mengurai persentase dari ucapan (mis. "50 persen", "ke 70%"). */
+    private fun parsePercent(text: String): Int? {
+        val t = text.lowercase()
+        Regex("""(\d{1,3})\s*(?:persen|%)""").find(t)?.let {
+            return it.groupValues[1].toInt().coerceIn(0, 100)
+        }
+        Regex("""(?:ke|jadi|jadikan|atur|set)\s*(\d{1,3})""").find(t)?.let {
+            return it.groupValues[1].toInt().coerceIn(0, 100)
+        }
+        return null
     }
 
     /** Mengurai jam & menit dari ucapan Indonesia (mis. "jam 6 pagi", "6:30"). */

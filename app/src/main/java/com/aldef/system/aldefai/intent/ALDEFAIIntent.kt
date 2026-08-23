@@ -24,6 +24,9 @@ enum class FeatureTarget(val label: String, val route: String) {
     ALDEF_AI("Pengaturan ALDEF AI", "aldef_ai")
 }
 
+/** Cara mengubah volume berbasis persen. */
+enum class VolumeMode { SET, RAISE, LOWER }
+
 /** Aksi perangkat. */
 enum class DeviceAction(val label: String) {
     BLUETOOTH_ON("Aktifkan Bluetooth"),
@@ -53,6 +56,15 @@ sealed interface ALDEFAIIntent {
 
     data class Device(val action: DeviceAction, override val confidence: Float) : ALDEFAIIntent {
         override val label: String get() = action.label
+    }
+
+    /** Ubah volume ke/keatas/kebawah sebesar [percent]% dari maksimum. */
+    data class SetVolume(val percent: Int, val mode: VolumeMode, override val confidence: Float) : ALDEFAIIntent {
+        override val label: String get() = when (mode) {
+            VolumeMode.SET -> "Volume $percent%"
+            VolumeMode.RAISE -> "Volume +$percent%"
+            VolumeMode.LOWER -> "Volume -$percent%"
+        }
     }
 
     data class Weather(override val confidence: Float) : ALDEFAIIntent {

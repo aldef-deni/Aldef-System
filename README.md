@@ -111,7 +111,8 @@ buka kamera", "saya ingin ambil foto"):
 | buka qris / kompas / kalkulator / speedometer / kalender | membuka **fitur Aldef System** |
 | buka pengaturan | membuka Setelan sistem |
 | kembali | menutup panel ALDEF AI |
-| volume naik / turun | mengatur volume (AudioManager) |
+| volume naik / turun | mengatur volume satu tingkat (AudioManager) |
+| volume 70 persen / besarkan volume 20% / kecilkan volume 30% | set/naik/turun volume berdasarkan **persentase** |
 | nyalakan / matikan bluetooth | membuka Setelan Bluetooth |
 | jam berapa sekarang | **menyebutkan** jam saat ini |
 | hari ini hari apa | **menyebutkan** nama hari |
