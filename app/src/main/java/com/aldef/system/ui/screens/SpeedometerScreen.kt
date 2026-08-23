@@ -3,9 +3,13 @@ package com.aldef.system.ui.screens
 import android.Manifest
 import android.annotation.SuppressLint
 import android.location.Location
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -63,6 +67,7 @@ import com.aldef.system.ui.components.KeepScreenOn
 import com.aldef.system.ui.components.NeonButton
 import com.aldef.system.ui.components.StatTile
 import com.aldef.system.ui.theme.NeonAmber
+import com.aldef.system.ui.theme.NeonBlue
 import com.aldef.system.ui.theme.NeonCyan
 import com.aldef.system.ui.theme.NeonGreen
 import com.aldef.system.ui.theme.NeonMagenta
@@ -165,6 +170,19 @@ fun SpeedometerScreen(navController: NavController) {
     fun convert(kmh: Float) = if (useKmh) kmh else kmh * KMH_TO_MPH
     val unitLabel = if (useKmh) "km/j" else "mph"
 
+    // "Self-test" saat layar dibuka: jarum menyapu penuh ke kanan lalu kembali,
+    // dengan pin skala menyala biru saat dilewati — meniru dasbor mobil.
+    val introSweep = remember { Animatable(0f) }
+    var introDone by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        introSweep.animateTo(1f, tween(1050, easing = FastOutSlowInEasing))
+        introSweep.animateTo(0f, tween(800, easing = FastOutSlowInEasing))
+        introDone = true
+    }
+    val speedFraction = (animatedSpeed / MAX_KMH).coerceIn(0f, 1f)
+    // Selama self-test jarum mengikuti kurva sapuan; sesudahnya mengikuti GPS.
+    val gaugeFraction = if (introDone) speedFraction else introSweep.value
+
     AuroraBackground(modifier = Modifier.fillMaxSize(), tint = WarmSweep) {
         Column(
             Modifier
@@ -225,7 +243,7 @@ fun SpeedometerScreen(navController: NavController) {
                     .aspectRatio(1.05f),
                 contentAlignment = Alignment.Center
             ) {
-                SpeedGauge(speedKmh = animatedSpeed, useKmh = useKmh)
+                SpeedGauge(fraction = gaugeFraction, useKmh = useKmh)
 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
@@ -362,11 +380,17 @@ fun SpeedometerScreen(navController: NavController) {
     }
 }
 
-/** Busur 240° dengan zona warna: hijau, kuning, lalu merah di ujung. */
+/**
+ * Busur 240°. Pin skala yang sudah dilewati jarum menyala biru dengan halo —
+ * saat "self-test" pembuka, semuanya menyala berurutan sampai mentok kanan.
+ *
+ * @param fraction posisi jarum 0..1 dari [MAX_KMH].
+ */
 @Composable
-private fun SpeedGauge(speedKmh: Float, useKmh: Boolean) {
+private fun SpeedGauge(fraction: Float, useKmh: Boolean) {
     val density = LocalDensity.current
     val labelPx = with(density) { 10.sp.toPx() }
+    val clamped = fraction.coerceIn(0f, 1f)
 
     Canvas(Modifier.fillMaxSize()) {
         val radius = size.minDimension / 2f
@@ -388,64 +412,86 @@ private fun SpeedGauge(speedKmh: Float, useKmh: Boolean) {
             style = Stroke(width = strokeWidth, cap = androidx.compose.ui.graphics.StrokeCap.Round)
         )
 
-        // Isian sesuai kecepatan.
-        val fraction = (speedKmh / MAX_KMH).coerceIn(0f, 1f)
+        // Isian sesuai posisi jarum.
         drawArc(
             brush = Brush.sweepGradient(
                 colors = listOf(NeonGreen, NeonCyan, NeonAmber, NeonOrange, NeonRed, NeonGreen),
                 center = center
             ),
             startAngle = startAngle,
-            sweepAngle = sweepAngle * fraction,
+            sweepAngle = sweepAngle * clamped,
             useCenter = false,
             topLeft = topLeft,
             size = arcSize,
             style = Stroke(width = strokeWidth, cap = androidx.compose.ui.graphics.StrokeCap.Round)
         )
 
-        // Skala angka tiap 20 km/j.
-        val step = 20
+        // Ambang penyalaan tiap pin (posisinya di busur, 0..1).
         val maxTick = MAX_KMH.toInt()
+        val step = 20
+
+        // Skala angka tiap 20 km/j; yang sudah dilewati diwarnai biru terang.
         drawContext.canvas.nativeCanvas.apply {
             val paint = android.graphics.Paint().apply {
                 isAntiAlias = true
                 textAlign = android.graphics.Paint.Align.CENTER
                 textSize = labelPx
-                color = TextMuted.toArgb()
             }
             var tick = 0
             while (tick <= maxTick) {
+                val lit = tick.toFloat() / maxTick <= clamped + 0.0001f
                 val angle = Math.toRadians((startAngle + sweepAngle * tick / maxTick).toDouble())
                 val tickRadius = radius * 0.66f
                 val x = center.x + (cos(angle) * tickRadius).toFloat()
                 val y = center.y + (sin(angle) * tickRadius).toFloat() + labelPx / 3f
                 val display = if (useKmh) tick else (tick * KMH_TO_MPH).roundToInt()
+                paint.color = if (lit) NeonBlue.toArgb() else TextMuted.toArgb()
+                paint.isFakeBoldText = lit
                 drawText(display.toString(), x, y, paint)
                 tick += step
             }
         }
 
-        // Garis skala kecil.
+        // Garis skala kecil; yang dilewati jarum menyala biru + halo.
         var minorTick = 0
         while (minorTick <= maxTick) {
             val angle = Math.toRadians((startAngle + sweepAngle * minorTick / maxTick).toDouble())
             val isMajor = minorTick % step == 0
+            val lit = minorTick.toFloat() / maxTick <= clamped + 0.0001f
             val outer = radius * 0.79f
             val length = if (isMajor) radius * 0.06f else radius * 0.03f
+            val start = center + Offset((cos(angle) * outer).toFloat(), (sin(angle) * outer).toFloat())
+            val end = center + Offset(
+                (cos(angle) * (outer - length)).toFloat(),
+                (sin(angle) * (outer - length)).toFloat()
+            )
+            if (lit) {
+                // Halo lembut di belakang pin yang menyala.
+                drawLine(
+                    color = NeonCyan.copy(alpha = 0.35f),
+                    start = start,
+                    end = end,
+                    strokeWidth = if (isMajor) 8f else 5f,
+                    cap = androidx.compose.ui.graphics.StrokeCap.Round
+                )
+            }
             drawLine(
-                color = if (isMajor) TextSecondary.copy(alpha = 0.8f) else TextMuted.copy(alpha = 0.4f),
-                start = center + Offset((cos(angle) * outer).toFloat(), (sin(angle) * outer).toFloat()),
-                end = center + Offset(
-                    (cos(angle) * (outer - length)).toFloat(),
-                    (sin(angle) * (outer - length)).toFloat()
-                ),
-                strokeWidth = if (isMajor) 2.5f else 1.2f
+                color = when {
+                    lit && isMajor -> NeonCyan
+                    lit -> NeonBlue
+                    isMajor -> TextSecondary.copy(alpha = 0.7f)
+                    else -> TextMuted.copy(alpha = 0.4f)
+                },
+                start = start,
+                end = end,
+                strokeWidth = if (isMajor) (if (lit) 3.5f else 2.5f) else (if (lit) 2f else 1.2f),
+                cap = androidx.compose.ui.graphics.StrokeCap.Round
             )
             minorTick += 5
         }
 
         // Jarum.
-        val needleAngle = Math.toRadians((startAngle + sweepAngle * fraction).toDouble())
+        val needleAngle = Math.toRadians((startAngle + sweepAngle * clamped).toDouble())
         val needleLength = radius * 0.56f
         val tip = center + Offset(
             (cos(needleAngle) * needleLength).toFloat(),
@@ -465,6 +511,10 @@ private fun SpeedGauge(speedKmh: Float, useKmh: Boolean) {
             )
             close()
         }
+        // Kilau biru di ujung jarum.
+        drawCircle(color = NeonCyan.copy(alpha = 0.35f), radius = radius * 0.05f, center = tip)
+        drawCircle(color = NeonCyan.copy(alpha = 0.85f), radius = radius * 0.022f, center = tip)
+
         drawPath(needle, brush = Brush.linearGradient(listOf(NeonOrange, NeonRed)))
         drawCircle(color = NeonOrange, radius = radius * 0.045f, center = center)
         drawCircle(color = Color.Black, radius = radius * 0.022f, center = center)
