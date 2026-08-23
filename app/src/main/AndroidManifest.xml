@@ -13,8 +13,16 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <!-- Hanya untuk indikator online/offline di dasbor. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <!-- Kunci aplikasi: overlay "sistem rusak" + daftar aplikasi terpasang. -->
+    <!-- Kunci aplikasi: deteksi aplikasi depan lewat Akses Penggunaan (bukan
+         Accessibility), overlay "sistem rusak", dan layanan latar depan yang
+         menjaganya tetap berjalan. -->
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
         tools:ignore="QueryAllPackagesPermission" />
 
@@ -43,20 +51,24 @@
             </intent-filter>
         </activity>
 
-        <!-- Kunci aplikasi: mendeteksi aplikasi terkunci yang dibuka lalu
-             menutupinya dengan layar "sistem gagal". -->
+        <!-- Kunci aplikasi: layanan latar depan yang memantau aplikasi depan
+             lewat Akses Penggunaan lalu menutupi yang terkunci. -->
         <service
-            android:name=".applock.AppLockAccessibilityService"
-            android:exported="true"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
-            android:label="@string/app_name">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
-            </intent-filter>
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/accessibility_service_config" />
+            android:name=".applock.service.AppLockService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Menampilkan layar kunci pada aplikasi terpilih milik pengguna sendiri" />
         </service>
+
+        <receiver
+            android:name=".applock.service.AppLockBootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
 
         <!-- Device Admin/Owner: proteksi uninstall & sembunyikan aplikasi. -->
         <receiver

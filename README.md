@@ -56,11 +56,14 @@ Framework, jadi aplikasi tidak butuh izin penyimpanan luas sama sekali.
 *Aplikasi* — kunci & sembunyikan aplikasi terpasang. Dua mekanisme, karena
 Android membatasi apa yang boleh dilakukan APK biasa:
 
-- **Kunci (Accessibility):** aplikasi terkunci **tetap muncul di drawer**, tapi
-  saat dibuka ditutupi layar palsu "Sistem Gagal — aplikasi rusak" lalu ditendang
-  ke home. Butuh izin *Accessibility* + *Tampilkan di atas aplikasi lain*
-  (dipandu dari panel status di dalam tab). Uninstall Aldef System sendiri bisa
-  dikunci lewat Device Admin.
+- **Kunci (Akses Penggunaan):** aplikasi terkunci **tetap muncul di drawer**,
+  tapi saat dibuka ditutupi layar palsu "Sistem Gagal — aplikasi rusak" lalu
+  ditendang ke home. Deteksi aplikasi-depan memakai izin *Akses Penggunaan*
+  (UsageStatsManager) lewat sebuah layanan latar depan — **sengaja bukan
+  AccessibilityService**, karena Accessibility memicu blokir keras Google Play
+  Protect saat install. Butuh izin *Akses Penggunaan* + *Tampilkan di atas
+  aplikasi lain* (dipandu dari panel status di dalam tab). Uninstall Aldef
+  System sendiri bisa dikunci lewat Device Admin.
 - **Sembunyikan total & blokir uninstall (Device Owner):** aplikasi benar-benar
   hilang dari drawer & pencarian, dan uninstall aplikasi lain bisa diblokir.
   Butuh status Device Owner, dipasang sekali lewat ADB dari komputer:

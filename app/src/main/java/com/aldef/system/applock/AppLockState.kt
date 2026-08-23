@@ -1,9 +1,9 @@
 package com.aldef.system.applock
 
+import android.app.AppOpsManager
 import android.content.Context
 import android.content.SharedPreferences
-import android.provider.Settings
-import android.text.TextUtils
+import android.os.Process
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap
  * diproteksi dari uninstall.
  *
  * Objek ini dipakai bersama oleh UI (di dalam brankas) dan oleh
- * [AppLockAccessibilityService] yang berjalan di proses yang sama, jadi
+ * [com.aldef.system.applock.service.AppLockService] yang berjalan di proses yang sama, jadi
  * perubahannya harus langsung terlihat oleh keduanya. Statusnya bertahan di
  * SharedPreferences; izin sementara ("buka dari brankas") hanya hidup di
  * memori.
@@ -33,10 +33,6 @@ object AppLockState {
 
     @Volatile
     private var initialized = false
-
-    /** true selama layanan Accessibility aktif tersambung. */
-    @Volatile
-    var serviceConnected = false
 
     @Synchronized
     fun init(context: Context) {
@@ -99,22 +95,23 @@ object AppLockState {
     }
 
     /**
-     * Membaca daftar layanan Accessibility yang diaktifkan pengguna di
-     * Pengaturan, lalu memeriksa apakah layanan kita ada di dalamnya. Lebih
-     * andal daripada hanya mengandalkan [serviceConnected] setelah proses
-     * baru dimulai.
+     * Memeriksa izin "Akses Penggunaan" (Usage Access). Inilah izin yang
+     * dipakai untuk mendeteksi aplikasi mana yang sedang di depan — lebih
+     * sempit daripada Accessibility (yang bisa membaca seluruh isi layar), dan
+     * karena itu tidak memicu blokir keras Google Play Protect.
      */
-    fun isAccessibilityEnabled(context: Context): Boolean {
-        val expected = context.packageName + "/" + AppLockAccessibilityService::class.java.name
-        val enabled = Settings.Secure.getString(
-            context.contentResolver,
-            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
-        ) ?: return false
-        val splitter = TextUtils.SimpleStringSplitter(':')
-        splitter.setString(enabled)
-        while (splitter.hasNext()) {
-            if (splitter.next().equals(expected, ignoreCase = true)) return true
-        }
-        return false
+    fun hasUsageAccess(context: Context): Boolean {
+        val ops = context.getSystemService(Context.APP_OPS_SERVICE) as? AppOpsManager
+            ?: return false
+        val mode = runCatching {
+            ops.unsafeCheckOpNoThrow(
+                AppOpsManager.OPSTR_GET_USAGE_STATS,
+                Process.myUid(),
+                context.packageName
+            )
+        }.getOrDefault(AppOpsManager.MODE_ERRORED)
+        return mode == AppOpsManager.MODE_ALLOWED
     }
+
+    fun hasLockedApps(): Boolean = synchronized(locked) { locked.isNotEmpty() }
 }

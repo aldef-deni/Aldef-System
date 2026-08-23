@@ -58,6 +58,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.aldef.system.applock.AppLockState
 import com.aldef.system.applock.DevicePolicyController
+import com.aldef.system.applock.service.AppLockService
 import com.aldef.system.data.InstalledApp
 import com.aldef.system.data.InstalledAppsRepository
 import com.aldef.system.ui.components.GlassCard
@@ -94,7 +95,7 @@ fun AppLockSection(modifier: Modifier = Modifier) {
     var query by remember { mutableStateOf("") }
     var refreshKey by remember { mutableStateOf(0) }
 
-    var accessibilityOn by remember { mutableStateOf(AppLockState.isAccessibilityEnabled(context)) }
+    var usageOn by remember { mutableStateOf(AppLockState.hasUsageAccess(context)) }
     var overlayOn by remember { mutableStateOf(Settings.canDrawOverlays(context)) }
     var deviceOwner by remember { mutableStateOf(controller.isDeviceOwner()) }
     var adminActive by remember { mutableStateOf(controller.isAdminActive()) }
@@ -112,10 +113,11 @@ fun AppLockSection(modifier: Modifier = Modifier) {
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                accessibilityOn = AppLockState.isAccessibilityEnabled(context)
+                usageOn = AppLockState.hasUsageAccess(context)
                 overlayOn = Settings.canDrawOverlays(context)
                 deviceOwner = controller.isDeviceOwner()
                 adminActive = controller.isAdminActive()
+                AppLockService.sync(context)
                 // Aplikasi tersembunyi yang tadi dibuka dari brankas
                 // dikembalikan ke keadaan tersembunyi.
                 if (deviceOwner) {
@@ -136,13 +138,13 @@ fun AppLockSection(modifier: Modifier = Modifier) {
 
     Column(modifier = modifier.fillMaxSize()) {
         StatusStrip(
-            accessibilityOn = accessibilityOn,
+            usageOn = usageOn,
             overlayOn = overlayOn,
             deviceOwner = deviceOwner,
             adminActive = adminActive,
-            onEnableAccessibility = {
+            onEnableUsage = {
                 context.startActivity(
-                    Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                    Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 )
             },
@@ -216,6 +218,7 @@ fun AppLockSection(modifier: Modifier = Modifier) {
                         deviceOwner = deviceOwner,
                         onToggleLock = { locked ->
                             AppLockState.setLocked(app.packageName, locked)
+                            AppLockService.sync(context)
                             refreshKey++
                         },
                         onToggleHide = { hide ->
@@ -256,18 +259,18 @@ private fun openFromVault(
 
 @Composable
 private fun StatusStrip(
-    accessibilityOn: Boolean,
+    usageOn: Boolean,
     overlayOn: Boolean,
     deviceOwner: Boolean,
     adminActive: Boolean,
-    onEnableAccessibility: () -> Unit,
+    onEnableUsage: () -> Unit,
     onEnableOverlay: () -> Unit,
     onToggleAdmin: () -> Unit,
     deviceOwnerCommand: String
 ) {
     val context = LocalContext.current
     var expanded by remember { mutableStateOf(false) }
-    val allReady = accessibilityOn && overlayOn
+    val allReady = usageOn && overlayOn
 
     GlassCard(
         modifier = Modifier
@@ -302,10 +305,10 @@ private fun StatusStrip(
             AnimatedVisibility(visible = expanded) {
                 Column(Modifier.padding(top = 12.dp)) {
                     PermissionLine(
-                        label = "Layanan Accessibility",
-                        granted = accessibilityOn,
+                        label = "Izin Akses Penggunaan",
+                        granted = usageOn,
                         actionText = "Aktifkan",
-                        onAction = onEnableAccessibility
+                        onAction = onEnableUsage
                     )
                     PermissionLine(
                         label = "Tampilkan di atas aplikasi lain",
