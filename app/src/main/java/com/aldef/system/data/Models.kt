@@ -18,5 +18,7 @@ sealed class Screen(val route: String) {
     data object Calculator : Screen("calculator")
     data object Speedometer : Screen("speedometer")
     data object Calendar : Screen("calendar")
+    data object AldefAi : Screen("aldef_ai")
+    data object AldefAiSetup : Screen("aldef_ai_setup")
     data object Vault : Screen("vault")
 }

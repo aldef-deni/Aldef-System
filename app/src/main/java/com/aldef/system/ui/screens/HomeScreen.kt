@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Calculate
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Explore
 import androidx.compose.material.icons.rounded.Logout
@@ -156,6 +157,13 @@ fun HomeScreen(navController: NavController) {
                 Icons.Rounded.CalendarMonth,
                 listOf(NeonBlue, NeonCyan),
                 Screen.Calendar.route
+            ),
+            Feature(
+                "ALDEF AI",
+                "Kontrol suara",
+                Icons.Rounded.AutoAwesome,
+                listOf(NeonViolet, NeonCyan),
+                Screen.AldefAi.route
             )
         )
     }

@@ -26,6 +26,15 @@
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
         tools:ignore="QueryAllPackagesPermission" />
 
+    <!-- ALDEF AI: pengenalan suara. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- ALDEF AI: ambil data cuaca (Open-Meteo, gratis tanpa API key). -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- ALDEF AI: setel alarm langsung lewat aplikasi jam. -->
+    <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
+
     <!-- Brankas memakai Storage Access Framework, jadi tidak ada izin
          penyimpanan luas yang perlu diminta. -->
 
@@ -61,6 +70,24 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Menampilkan layar kunci pada aplikasi terpilih milik pengguna sendiri" />
         </service>
+
+        <!-- ALDEF AI: strip pemicu tepi + (nanti) mic/TTS. -->
+        <service
+            android:name=".aldefai.service.AldefAiService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse|microphone">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Pemicu tepi asisten suara pribadi milik pengguna sendiri" />
+        </service>
+
+        <!-- Activity transparan untuk meminta izin mikrofon dari panel overlay. -->
+        <activity
+            android:name=".aldefai.ui.VoicePermissionActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
         <receiver
             android:name=".applock.service.AppLockBootReceiver"

@@ -1,8 +1,10 @@
 # Aldef System
 
-Aplikasi Android pribadi berbasis Kotlin + Jetpack Compose dengan empat modul:
-pemindai QRIS, kompas, kalkulator (sekaligus pintu brankas berkas), dan
-speedometer GPS.
+Aplikasi Android pribadi berbasis Kotlin + Jetpack Compose dengan enam modul:
+pemindai QRIS, kompas, kalkulator (sekaligus pintu brankas berkas), speedometer
+GPS, kalender libur nasional, dan **ALDEF AI** (asisten kontrol suara).
+
+Dioptimalkan untuk **Realme 5 Pro (Android 11 / ColorOS 11.1, Snapdragon 712)**.
 
 ## Akses
 
@@ -44,6 +46,14 @@ pratinjau hasil saat mengetik.
 **Speedometer** — kecepatan dibaca dari GPS (bukan diturunkan dari selisih
 posisi), lengkap dengan kecepatan tertinggi, rata-rata, jarak tempuh,
 ketinggian, dan arah. Satuan km/j ↔ mph bisa ditukar dan pilihannya tersimpan.
+Saat dibuka, jarum menyapu penuh ("self-test") dengan pin skala menyala biru.
+
+**Kalender** — carousel bulan (bulan tengah besar, geser kiri/kanan), default di
+bulan & tanggal sekarang. Hari Minggu dan **libur nasional Indonesia** ditandai
+merah; hari libur diberi titik + didaftar di bawah grid. Sumber tanggal: tetap
+(selalu akurat) + Kristen (dihitung dari Paskah, akurat tiap tahun) + lunar
+(tabel 2025–2027 di `data/Holidays.kt`, sinkronkan dengan SKB resmi). Notifikasi
+**H-1** muncul sehari sebelum tanggal merah (alarm harian pukul 19.00).
 
 **Brankas** — dua tab: **Berkas** dan **Aplikasi**.
 
@@ -75,6 +85,70 @@ Android membatasi apa yang boleh dilakukan APK biasa:
 Dari dalam brankas, aplikasi terkunci/tersembunyi bisa dibuka normal (tombol
 **Buka**) — kunci dilewati sesaat, dan aplikasi tersembunyi ditampilkan lalu
 disembunyikan lagi saat Anda kembali ke brankas.
+
+## ALDEF AI — kontrol suara
+
+Asisten suara **lokal-first**: tanpa backend, tanpa API AI eksternal, tanpa root,
+tanpa Accessibility, tanpa hidden API — hanya API resmi Android.
+
+**Cara pakai:** aktifkan di kartu **ALDEF AI** → jalani **Panduan Penyiapan**
+(izin mikrofon, overlay, baterai/autostart, tes) → sebuah **strip tipis** muncul
+di tepi layar (kiri/kanan, bisa diatur), tersedia di Home & aplikasi lain. Geser
+strip → **panel** slide masuk → ketuk **mikrofon ALDEFTECH** → ucapkan perintah.
+
+**Pipeline:** Suara → `SpeechRecognizer` (id-ID) → teks → `IntentEngine` (aturan
+lokal, natural language) → `ActionExecutor` (whitelist) → balasan `TextToSpeech`.
+
+**Perintah yang dipahami** (kalimat bebas, bukan string persis — mis. "tolong
+buka kamera", "saya ingin ambil foto"):
+
+| Ucapan | Aksi |
+| --- | --- |
+| buka kamera | membuka kamera |
+| buka galeri | membuka **Galeri bawaan Realme** (`com.coloros.gallery3d`), bukan Google Photos |
+| buka browser | membuka browser |
+| buka `<nama aplikasi>` | membuka **aplikasi terpasang apa pun** (mis. "buka whatsapp") — **kecuali aplikasi yang di-hide** di brankas |
+| buka qris / kompas / kalkulator / speedometer / kalender | membuka **fitur Aldef System** |
+| buka pengaturan | membuka Setelan sistem |
+| kembali | menutup panel ALDEF AI |
+| volume naik / turun | mengatur volume (AudioManager) |
+| nyalakan / matikan bluetooth | membuka Setelan Bluetooth |
+| jam berapa sekarang | **menyebutkan** jam saat ini |
+| hari ini hari apa | **menyebutkan** nama hari |
+| tanggal berapa hari ini | **menyebutkan** tanggal lengkap |
+| lokasi saat ini | **menyebutkan** lokasi (reverse-geocode GPS) |
+| cek cuaca hari ini | **menyebutkan** suhu & kondisi cuaca (Open-Meteo) |
+| set alarm jam 6 pagi | **menyetel alarm langsung** (tanpa buka UI) via `AlarmClock` |
+
+Perintah info (jam, hari, tanggal, lokasi, cuaca) **diucapkan langsung** oleh
+ALDEF AI tanpa membuka aplikasi. Brankas sengaja **tidak** dapat dibuka via suara
+demi menjaga kerahasiaannya.
+
+**Continuous Listening** (opsional, default OFF): setelah menjawab, otomatis
+mendengar lagi; jeda-aman setelah 3 siklus sepi agar mic tak menyala selamanya.
+
+**Arsitektur** (`app/.../aldefai/`): `core` (prefs, optimasi perangkat) ·
+`voice` (recognizer + state) · `intent` (engine aturan + `IntentRouter` yang
+siap disambung AI on-device) · `action` (executor whitelist) · `tts` ·
+`overlay` (strip + panel Compose) · `service` (FGS) · `ui` (settings + wizard).
+
+**Batas resmi (bukan bug):**
+
+- **"Kembali"** hanya menutup panel — menekan tombol Back sistem di aplikasi lain
+  butuh Accessibility, yang sengaja tidak dipakai.
+- **Bluetooth** dibuka lewat Setelan — `BluetoothAdapter.enable()` jadi no-op
+  sejak targetSdk 33+.
+- **Cuaca** memakai **Open-Meteo** (gratis, tanpa API key, bukan server sendiri)
+  via GPS + internet — satu-satunya cara menyebutkan cuaca nyata tanpa membuka
+  aplikasi. Jam, hari, dan tanggal murni lokal (tanpa internet). Lokasi memakai
+  Geocoder bawaan Android.
+- **Autostart ColorOS** tak punya API resmi — wizard hanya membuka halamannya,
+  aktifkan manual + kunci di Recents agar strip bertahan setelah idle lama.
+- Pengenalan suara id-ID umumnya **butuh internet** (mesin Google).
+
+Semua fitur AI berbasis overlay `SYSTEM_ALERT_WINDOW` + foreground service
+bertipe `specialUse|microphone`; tidak ada polling CPU, animasi digambar Canvas
+ringan demi Snapdragon 712.
 
 ## Aset merek
 
