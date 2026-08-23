@@ -45,11 +45,33 @@ pratinjau hasil saat mengetik.
 posisi), lengkap dengan kecepatan tertinggi, rata-rata, jarak tempuh,
 ketinggian, dan arah. Satuan km/j ↔ mph bisa ditukar dan pilihannya tersimpan.
 
-**Brankas** — berkas dienkripsi AES-256-GCM dengan kunci turunan PBKDF2
-(120.000 iterasi) dari PIN, lalu disimpan di direktori privat aplikasi sehingga
-tidak muncul di galeri maupun pengelola berkas. PIN tidak pernah disimpan apa
-adanya — hanya salt acak dan hash SHA-256-nya. Berkas ditambahkan lewat Storage
-Access Framework, jadi aplikasi tidak butuh izin penyimpanan luas sama sekali.
+**Brankas** — dua tab: **Berkas** dan **Aplikasi**.
+
+*Berkas* dienkripsi AES-256-GCM dengan kunci turunan PBKDF2 (120.000 iterasi)
+dari PIN, lalu disimpan di direktori privat aplikasi sehingga tidak muncul di
+galeri maupun pengelola berkas. PIN tidak pernah disimpan apa adanya — hanya
+salt acak dan hash SHA-256-nya. Berkas ditambahkan lewat Storage Access
+Framework, jadi aplikasi tidak butuh izin penyimpanan luas sama sekali.
+
+*Aplikasi* — kunci & sembunyikan aplikasi terpasang. Dua mekanisme, karena
+Android membatasi apa yang boleh dilakukan APK biasa:
+
+- **Kunci (Accessibility):** aplikasi terkunci **tetap muncul di drawer**, tapi
+  saat dibuka ditutupi layar palsu "Sistem Gagal — aplikasi rusak" lalu ditendang
+  ke home. Butuh izin *Accessibility* + *Tampilkan di atas aplikasi lain*
+  (dipandu dari panel status di dalam tab). Uninstall Aldef System sendiri bisa
+  dikunci lewat Device Admin.
+- **Sembunyikan total & blokir uninstall (Device Owner):** aplikasi benar-benar
+  hilang dari drawer & pencarian, dan uninstall aplikasi lain bisa diblokir.
+  Butuh status Device Owner, dipasang sekali lewat ADB dari komputer:
+  `adb shell dpm set-device-owner com.aldef.system/.applock.AldefDeviceAdminReceiver`
+  (perangkat mungkin harus tanpa akun Google dulu — kadang perlu factory reset).
+  Selama belum Device Owner, tombol Sembunyikan & Cegah-hapus nonaktif; fitur
+  Kunci tetap jalan.
+
+Dari dalam brankas, aplikasi terkunci/tersembunyi bisa dibuka normal (tombol
+**Buka**) — kunci dilewati sesaat, dan aplikasi tersembunyi ditampilkan lalu
+disembunyikan lagi saat Anda kembali ke brankas.
 
 ## Aset merek
 

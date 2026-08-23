@@ -125,6 +125,7 @@ fun VaultScreen(navController: NavController) {
     var pendingDelete by remember { mutableStateOf<VaultEntry?>(null) }
     var pendingExport by remember { mutableStateOf<VaultEntry?>(null) }
     var showPinChange by remember { mutableStateOf(false) }
+    var vaultTab by remember { mutableStateOf(VaultTab.Files) }
 
     fun lockAndLeave() {
         VaultSession.lock()
@@ -272,20 +273,28 @@ fun VaultScreen(navController: NavController) {
                     }
                 }
 
-                else -> VaultContent(
-                    entries = entries,
-                    unreadable = unreadable,
-                    totalBytes = remember(entries.size) { repository.totalBytes() },
-                    pinIsDefault = prefs.vaultPinIsDefault,
-                    onAdd = { importLauncher.launch(arrayOf("*/*")) },
-                    onOpen = { openEntry(it) },
-                    onExport = {
-                        pendingExport = it
-                        exportLauncher.launch(it.name)
-                    },
-                    onDelete = { pendingDelete = it },
-                    onChangePin = { showPinChange = true }
-                )
+                else -> Column(Modifier.fillMaxSize()) {
+                    VaultTabRow(selected = vaultTab, onSelect = { vaultTab = it })
+                    when (vaultTab) {
+                        VaultTab.Files -> VaultContent(
+                            modifier = Modifier.weight(1f),
+                            entries = entries,
+                            unreadable = unreadable,
+                            totalBytes = remember(entries.size) { repository.totalBytes() },
+                            pinIsDefault = prefs.vaultPinIsDefault,
+                            onAdd = { importLauncher.launch(arrayOf("*/*")) },
+                            onOpen = { openEntry(it) },
+                            onExport = {
+                                pendingExport = it
+                                exportLauncher.launch(it.name)
+                            },
+                            onDelete = { pendingDelete = it },
+                            onChangePin = { showPinChange = true }
+                        )
+
+                        VaultTab.Apps -> AppLockSection(modifier = Modifier.weight(1f))
+                    }
+                }
             }
         }
 
@@ -408,8 +417,48 @@ fun VaultScreen(navController: NavController) {
     }
 }
 
+private enum class VaultTab { Files, Apps }
+
+@Composable
+private fun VaultTabRow(selected: VaultTab, onSelect: (VaultTab) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        VaultTabChip("BERKAS", selected == VaultTab.Files, Modifier.weight(1f)) { onSelect(VaultTab.Files) }
+        VaultTabChip("APLIKASI", selected == VaultTab.Apps, Modifier.weight(1f)) { onSelect(VaultTab.Apps) }
+    }
+}
+
+@Composable
+private fun VaultTabChip(text: String, active: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(
+                if (active) Brush.linearGradient(listOf(NeonCyan.copy(alpha = 0.20f), NeonViolet.copy(alpha = 0.20f)))
+                else Brush.linearGradient(listOf(Surface2.copy(alpha = 0.7f), Surface2.copy(alpha = 0.7f)))
+            )
+            .border(1.dp, if (active) NeonCyan.copy(alpha = 0.6f) else Hairline, RoundedCornerShape(14.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 11.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            color = if (active) TextPrimary else TextMuted,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            letterSpacing = 1.2.sp
+        )
+    }
+}
+
 @Composable
 private fun VaultContent(
+    modifier: Modifier = Modifier,
     entries: List<VaultEntry>,
     unreadable: Int,
     totalBytes: Long,
@@ -420,7 +469,7 @@ private fun VaultContent(
     onDelete: (VaultEntry) -> Unit,
     onChangePin: () -> Unit
 ) {
-    Column(Modifier.fillMaxSize()) {
+    Column(modifier.fillMaxSize()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()

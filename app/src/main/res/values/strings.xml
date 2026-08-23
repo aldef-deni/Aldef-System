@@ -2,4 +2,5 @@
 <resources>
     <string name="app_name">Aldef System</string>
     <string name="logo_desc">Logo Aldef Tech</string>
+    <string name="accessibility_desc">Mengunci aplikasi terpilih: saat aplikasi terkunci dibuka, Aldef System menampilkannya sebagai tidak dapat dibuka. Tidak ada isi layar yang dibaca atau dikirim ke mana pun.</string>
 </resources>
