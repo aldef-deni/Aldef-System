@@ -12,6 +12,10 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
@@ -51,8 +55,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.FlashOff
 import androidx.compose.material.icons.rounded.FlashOn
+import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.QrCodeScanner
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -62,6 +68,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -117,7 +124,60 @@ private const val TAG = "QrisScanner"
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun QrisScannerScreen(navController: NavController) {
+    val context = LocalContext.current
     val cameraPermission = rememberPermissionState(Manifest.permission.CAMERA)
+
+    // Hasil dipegang di level layar supaya panel hasil muncul baik dari kamera
+    // maupun dari gambar galeri, bahkan ketika izin kamera ditolak.
+    var result by remember { mutableStateOf<String?>(null) }
+    var decoding by remember { mutableStateOf(false) }
+    var galleryError by remember { mutableStateOf<String?>(null) }
+
+    // Pemindai terpisah untuk gambar galeri; kamera memakai miliknya sendiri.
+    val galleryScanner = remember {
+        BarcodeScanning.getClient(
+            com.google.mlkit.vision.barcode.BarcodeScannerOptions.Builder()
+                .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
+                .build()
+        )
+    }
+    DisposableEffect(Unit) { onDispose { galleryScanner.close() } }
+
+    val pickImage = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        decoding = true
+        galleryError = null
+        runCatching { InputImage.fromFilePath(context, uri) }
+            .onSuccess { image ->
+                galleryScanner.process(image)
+                    .addOnSuccessListener { codes ->
+                        decoding = false
+                        val value = codes.firstNotNullOfOrNull { it.rawValue }
+                        if (value != null) {
+                            result = value
+                            vibrate(context)
+                        } else {
+                            galleryError = "Tidak ada kode QR yang terbaca pada gambar itu"
+                        }
+                    }
+                    .addOnFailureListener {
+                        decoding = false
+                        galleryError = "Gagal membaca gambar"
+                    }
+            }
+            .onFailure {
+                decoding = false
+                galleryError = "Gagal membuka gambar"
+            }
+    }
+
+    fun openGallery() {
+        pickImage.launch(
+            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+        )
+    }
 
     LaunchedEffect(Unit) {
         if (!cameraPermission.status.isGranted) cameraPermission.launchPermissionRequest()
@@ -131,17 +191,87 @@ fun QrisScannerScreen(navController: NavController) {
         ) {
             AldefTopBar(
                 title = "Pemindai QRIS",
-                subtitle = "ARAHKAN KE KODE QR",
-                onBack = { navController.popBackStack() }
+                subtitle = "PINDAI ATAU AMBIL DARI GALERI",
+                onBack = { navController.popBackStack() },
+                actions = {
+                    CircleIconButton(
+                        icon = Icons.Rounded.Image,
+                        contentDescription = "Ambil dari galeri",
+                        onClick = { openGallery() }
+                    )
+                }
             )
 
             if (cameraPermission.status.isGranted) {
-                ScannerSurface(Modifier.weight(1f))
+                ScannerSurface(
+                    modifier = Modifier.weight(1f),
+                    paused = result != null || decoding,
+                    onResult = { result = it }
+                )
             } else {
                 PermissionNotice(
                     modifier = Modifier.weight(1f),
                     permanentlyDenied = !cameraPermission.status.shouldShowRationale,
-                    onRequest = { cameraPermission.launchPermissionRequest() }
+                    onRequest = { cameraPermission.launchPermissionRequest() },
+                    onPickGallery = { openGallery() }
+                )
+            }
+        }
+
+        if (decoding) {
+            GlassCard(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(28.dp)
+            ) {
+                Row(
+                    Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        color = NeonOrange,
+                        strokeWidth = 2.dp
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Text("Membaca gambar…", color = TextPrimary, fontSize = 13.sp)
+                }
+            }
+        }
+
+        if (galleryError != null) {
+            GlassCard(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 92.dp, start = 24.dp, end = 24.dp),
+                borderTint = listOf(NeonRed.copy(alpha = 0.5f), Color.Transparent)
+            ) {
+                Text(
+                    text = galleryError ?: "",
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                        .clickable { galleryError = null },
+                    color = NeonRed,
+                    fontSize = 12.sp,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+
+        AnimatedVisibility(
+            visible = result != null,
+            enter = slideInVertically(tween(320)) { it } + fadeIn(tween(320)),
+            exit = slideOutVertically(tween(240)) { it } + fadeOut(tween(240)),
+            modifier = Modifier.align(Alignment.BottomCenter)
+        ) {
+            result?.let { payload ->
+                ResultSheet(
+                    payload = payload,
+                    onScanAgain = {
+                        result = null
+                        galleryError = null
+                    },
+                    onCopy = { copyToClipboard(context, payload) }
                 )
             }
         }
@@ -151,11 +281,18 @@ fun QrisScannerScreen(navController: NavController) {
 @SuppressLint("UnsafeOptInUsageError")
 @OptIn(ExperimentalGetImage::class)
 @Composable
-private fun ScannerSurface(modifier: Modifier = Modifier) {
+private fun ScannerSurface(
+    modifier: Modifier = Modifier,
+    paused: Boolean,
+    onResult: (String) -> Unit
+) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    var result by remember { mutableStateOf<String?>(null) }
+    // Dibaca dari dalam analyzer (thread lain); rememberUpdatedState menjaga
+    // nilainya selalu yang terbaru tanpa memicu ikatan ulang kamera.
+    val isPaused by rememberUpdatedState(paused)
+    val emitResult by rememberUpdatedState(onResult)
     var torchOn by remember { mutableStateOf(false) }
     var cameraError by remember { mutableStateOf<String?>(null) }
     var camera by remember { mutableStateOf<androidx.camera.core.Camera?>(null) }
@@ -206,11 +343,11 @@ private fun ScannerSurface(modifier: Modifier = Modifier) {
                     )
                     scanner.process(input)
                         .addOnSuccessListener { codes ->
-                            // Hasil pertama menang; pemindaian berhenti sampai
-                            // pengguna menutup panel hasil.
-                            if (result == null) {
+                            // Hasil pertama menang; pemindaian berhenti selama
+                            // panel hasil terbuka atau gambar galeri diproses.
+                            if (!isPaused) {
                                 codes.firstNotNullOfOrNull { it.rawValue }?.let { value ->
-                                    result = value
+                                    emitResult(value)
                                     vibrate(context)
                                 }
                             }
@@ -243,7 +380,7 @@ private fun ScannerSurface(modifier: Modifier = Modifier) {
             modifier = Modifier.fillMaxSize()
         )
 
-        ScannerOverlay(active = result == null)
+        ScannerOverlay(active = !paused)
 
         Row(
             modifier = Modifier
@@ -269,21 +406,6 @@ private fun ScannerSurface(modifier: Modifier = Modifier) {
                     modifier = Modifier.padding(20.dp),
                     color = NeonRed,
                     textAlign = TextAlign.Center
-                )
-            }
-        }
-
-        AnimatedVisibility(
-            visible = result != null,
-            enter = slideInVertically(tween(320)) { it } + fadeIn(tween(320)),
-            exit = slideOutVertically(tween(240)) { it } + fadeOut(tween(240)),
-            modifier = Modifier.align(Alignment.BottomCenter)
-        ) {
-            result?.let { payload ->
-                ResultSheet(
-                    payload = payload,
-                    onScanAgain = { result = null },
-                    onCopy = { copyToClipboard(context, payload) }
                 )
             }
         }
@@ -543,7 +665,8 @@ private fun InfoRow(label: String, value: String) {
 private fun PermissionNotice(
     modifier: Modifier,
     permanentlyDenied: Boolean,
-    onRequest: () -> Unit
+    onRequest: () -> Unit,
+    onPickGallery: () -> Unit
 ) {
     val context = LocalContext.current
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -566,7 +689,7 @@ private fun PermissionNotice(
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    text = "Pemindai QRIS membaca kode langsung dari kamera. Tidak ada gambar yang disimpan atau dikirim ke mana pun.",
+                    text = "Pemindai QRIS membaca kode langsung dari kamera. Tidak ada gambar yang disimpan atau dikirim ke mana pun. Anda juga bisa mengambil QRIS dari galeri tanpa kamera.",
                     style = MaterialTheme.typography.bodySmall,
                     color = TextSecondary,
                     textAlign = TextAlign.Center
@@ -589,6 +712,13 @@ private fun PermissionNotice(
                             onRequest()
                         }
                     }
+                )
+                Spacer(Modifier.height(10.dp))
+                OutlineNeonButton(
+                    text = "AMBIL DARI GALERI",
+                    modifier = Modifier.fillMaxWidth(),
+                    leading = Icons.Rounded.Image,
+                    onClick = onPickGallery
                 )
             }
         }
