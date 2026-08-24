@@ -7,8 +7,7 @@ plugins {
 }
 
 // Kredensial rilis dibaca dari keystore.properties. Kalau berkasnya tidak ada,
-// build release tetap jalan tapi APK-nya tidak ditandatangani — kegagalan
-// penandatanganan tidak pernah diam-diam.
+// build release tetap jalan tapi APK-nya ditandatangani debug keystore agar langsung dapat diinstal.
 def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file('keystore.properties')
 if (keystorePropertiesFile.exists()) {
@@ -16,6 +15,14 @@ if (keystorePropertiesFile.exists()) {
 }
 def hasReleaseKeystore = keystoreProperties['storeFile'] != null &&
         rootProject.file(keystoreProperties['storeFile']).exists()
+
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withInputStream { localProperties.load(it) }
+}
+def rawGeminiKey = localProperties.getProperty('GEMINI_API_KEY') ?: ""
+def geminiKey = rawGeminiKey.trim().replaceAll('^["\']|["\']$', '')
 
 android {
     namespace 'com.aldef.system'
@@ -27,6 +34,8 @@ android {
         targetSdk 35
         versionCode 1
         versionName "1.0.0"
+
+        buildConfigField "String", "GEMINI_API_KEY", "\"${geminiKey}\""
 
         vectorDrawables {
             useSupportLibrary true
@@ -59,6 +68,8 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             if (hasReleaseKeystore) {
                 signingConfig signingConfigs.release
+            } else {
+                signingConfig signingConfigs.debug
             }
         }
     }
@@ -74,6 +85,7 @@ android {
 
     buildFeatures {
         compose true
+        buildConfig true
     }
 
     lint {
@@ -122,6 +134,10 @@ dependencies {
     implementation 'androidx.core:core-splashscreen:1.0.1'
 
     implementation 'com.google.android.gms:play-services-location:21.3.0'
+
+    // Google Gemini API & Networking
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    implementation 'com.google.code.gson:gson:2.10.1'
 
     debugImplementation 'androidx.compose.ui:ui-tooling'
 }
