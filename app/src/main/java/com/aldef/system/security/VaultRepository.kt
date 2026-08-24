@@ -2,6 +2,7 @@ package com.aldef.system.security
 
 import android.content.Context
 import android.net.Uri
+import android.provider.DocumentsContract
 import android.provider.OpenableColumns
 import org.json.JSONObject
 import java.io.File
@@ -9,6 +10,9 @@ import java.util.UUID
 import javax.crypto.SecretKey
 
 /** Satu berkas di dalam brankas. */
+/** Hasil impor: entri di brankas + apakah berkas asli berhasil dihapus. */
+data class ImportOutcome(val entry: VaultEntry, val originalRemoved: Boolean)
+
 data class VaultEntry(
     val id: String,
     val name: String,
@@ -67,7 +71,7 @@ class VaultRepository(private val context: Context) {
     data class Listing(val entries: List<VaultEntry>, val unreadable: Int)
 
     /** Menarik berkas dari [uri] ke dalam brankas. */
-    fun import(key: SecretKey, uri: Uri): Result<VaultEntry> = runCatching {
+    fun import(key: SecretKey, uri: Uri): Result<ImportOutcome> = runCatching {
         val resolver = context.contentResolver
         var name = uri.lastPathSegment?.substringAfterLast('/') ?: "berkas"
         var size = 0L
@@ -98,7 +102,16 @@ class VaultRepository(private val context: Context) {
             addedAt = System.currentTimeMillis()
         )
         writeIndex(key, entry)
-        entry
+
+        // Sembunyikan berkas asli: hapus dari lokasinya setelah tersimpan aman
+        // di brankas. Hanya untuk URI dokumen (SAF); berkas cache internal
+        // (file://) diurus di tempat lain.
+        val removed = if (uri.scheme == "content") {
+            runCatching { DocumentsContract.deleteDocument(resolver, uri) }.getOrDefault(false)
+        } else {
+            false
+        }
+        ImportOutcome(entry, removed)
     }
 
     private fun writeIndex(key: SecretKey, entry: VaultEntry) {

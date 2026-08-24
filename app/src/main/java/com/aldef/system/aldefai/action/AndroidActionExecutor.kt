@@ -173,15 +173,31 @@ class AndroidActionExecutor(context: Context) : ALDEFAIActionExecutor {
             ?: return ALDEFAIActionResult(false, "Tidak bisa mengatur volume.", closePanel = false)
         val stream = AudioManager.STREAM_MUSIC
         val max = audio.getStreamMaxVolume(stream)
+        if (max <= 0) return ALDEFAIActionResult(false, "Tidak bisa mengatur volume.", closePanel = false)
         val current = audio.getStreamVolume(stream)
         val delta = Math.round(max * percent / 100f)
         val target = when (mode) {
-            VolumeMode.SET -> Math.round(max * percent / 100f)
+            VolumeMode.SET -> delta
             VolumeMode.RAISE -> current + delta
             VolumeMode.LOWER -> current - delta
         }.coerceIn(0, max)
-        runCatching { audio.setStreamVolume(stream, target, AudioManager.FLAG_SHOW_UI) }
-        val actual = if (max == 0) 0 else Math.round(target * 100f / max)
+
+        // Coba set langsung; sebagian ROM (ColorOS) mengabaikan setStreamVolume
+        // dari latar. Kalau tak berubah, dorong dengan adjustStreamVolume yang
+        // lebih diizinkan, langkah demi langkah sampai target.
+        runCatching { audio.setStreamVolume(stream, target, 0) }
+        var now = audio.getStreamVolume(stream)
+        var guard = 0
+        while (now != target && guard <= max + 2) {
+            val dir = if (now < target) AudioManager.ADJUST_RAISE else AudioManager.ADJUST_LOWER
+            runCatching { audio.adjustStreamVolume(stream, dir, AudioManager.FLAG_SHOW_UI) }
+            val next = audio.getStreamVolume(stream)
+            if (next == now) break
+            now = next
+            guard++
+        }
+
+        val actual = Math.round(now * 100f / max)
         val verb = when (mode) {
             VolumeMode.SET -> "disetel ke"
             VolumeMode.RAISE -> "dinaikkan ke"

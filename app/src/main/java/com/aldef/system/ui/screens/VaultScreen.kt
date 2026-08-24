@@ -161,15 +161,23 @@ fun VaultScreen(navController: NavController) {
         val currentKey = key ?: return@rememberLauncherForActivityResult
         if (uris.isEmpty()) return@rememberLauncherForActivityResult
         scope.launch {
-            busy = "Mengunci ${uris.size} berkas…"
-            val failures = withContext(Dispatchers.IO) {
-                uris.count { uri -> repository.import(currentKey, uri).isFailure }
+            busy = "Memindahkan ${uris.size} berkas ke brankas…"
+            var failures = 0
+            var removed = 0
+            withContext(Dispatchers.IO) {
+                uris.forEach { uri ->
+                    val result = repository.import(currentKey, uri)
+                    if (result.isFailure) failures++
+                    else if (result.getOrNull()?.originalRemoved == true) removed++
+                }
             }
             busy = null
-            status = if (failures == 0) {
-                "${uris.size} berkas terkunci di brankas" to false
-            } else {
-                "$failures dari ${uris.size} berkas gagal dikunci" to true
+            val total = uris.size
+            status = when {
+                failures > 0 -> "$failures dari $total berkas gagal dikunci" to true
+                removed == total -> "$total berkas dipindahkan ke brankas — asli dihapus" to false
+                removed == 0 -> "$total berkas dikunci, tapi asli tak bisa dihapus otomatis" to true
+                else -> "$total berkas dikunci; $removed asli dihapus" to false
             }
             reload(currentKey)
         }
@@ -388,7 +396,7 @@ fun VaultScreen(navController: NavController) {
                         runCatching {
                             existing.forEach { entry ->
                                 val plain = repository.decryptToCache(oldKey, entry).getOrThrow()
-                                rewritten += repository.import(newKey, Uri.fromFile(plain)).getOrThrow()
+                                rewritten += repository.import(newKey, Uri.fromFile(plain)).getOrThrow().entry
                                 plain.delete()
                             }
                             prefs.setVaultPin(newPin)

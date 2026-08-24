@@ -29,11 +29,16 @@
     <!-- ALDEF AI: pengenalan suara. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <!-- Agar cuaca & lokasi bisa dibaca saat panel (overlay) aktif: layanan
+         latar depan bertipe location memberi akses lokasi "while-in-use". -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <!-- ALDEF AI: ambil data cuaca (Open-Meteo, gratis tanpa API key). -->
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- ALDEF AI: setel alarm langsung lewat aplikasi jam. -->
     <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
+    <!-- ALDEF AI: atur volume lewat suara. -->
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 
     <!-- Brankas memakai Storage Access Framework, jadi tidak ada izin
          penyimpanan luas yang perlu diminta. -->
@@ -75,7 +80,7 @@
         <service
             android:name=".aldefai.service.AldefAiService"
             android:exported="false"
-            android:foregroundServiceType="specialUse|microphone">
+            android:foregroundServiceType="specialUse|microphone|location">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Pemicu tepi asisten suara pribadi milik pengguna sendiri" />
