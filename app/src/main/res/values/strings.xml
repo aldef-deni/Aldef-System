@@ -1,11 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Aldef System</string>
-    <string name="accessibility_service_description">Layanan aksesibilitas cerdas Aldef System untuk otomatisasi perintah suara dan pengiriman WhatsApp otomatis.</string>
-    
-    <!-- String Resource UI Screens (Login, Splash, Main) -->
-    <string name="logo_desc">Aldef System Logo</string>
-    <string name="login_title">Masuk ke Aldef System</string>
-    <string name="login_button">Masuk</string>
-    <string name="splash_title">Aldef System Voice Assistant</string>
-    <string name="welcome_message">Selamat datang di Aldef System</string>
+    <string name="logo_desc">Logo Aldef Tech</string>
 </resources>

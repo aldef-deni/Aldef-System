@@ -7,7 +7,8 @@ plugins {
 }
 
 // Kredensial rilis dibaca dari keystore.properties. Kalau berkasnya tidak ada,
-// build release tetap jalan tapi APK-nya ditandatangani debug keystore agar langsung dapat diinstal.
+// build release tetap jalan tapi APK-nya tidak ditandatangani — kegagalan
+// penandatanganan tidak pernah diam-diam.
 def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file('keystore.properties')
 if (keystorePropertiesFile.exists()) {
@@ -16,13 +17,13 @@ if (keystorePropertiesFile.exists()) {
 def hasReleaseKeystore = keystoreProperties['storeFile'] != null &&
         rootProject.file(keystoreProperties['storeFile']).exists()
 
+// Gemini API key dibaca dari local.properties (tidak masuk git).
 def localProperties = new Properties()
 def localPropertiesFile = rootProject.file('local.properties')
 if (localPropertiesFile.exists()) {
     localPropertiesFile.withInputStream { localProperties.load(it) }
 }
-def rawGeminiKey = localProperties.getProperty('GEMINI_API_KEY') ?: ""
-def geminiKey = rawGeminiKey.trim().replaceAll('^["\']|["\']$', '')
+def geminiKey = localProperties.getProperty('GEMINI_API_KEY', '')
 
 android {
     namespace 'com.aldef.system'
@@ -35,11 +36,12 @@ android {
         versionCode 1
         versionName "1.0.0"
 
-        buildConfigField "String", "GEMINI_API_KEY", "\"${geminiKey}\""
-
         vectorDrawables {
             useSupportLibrary true
         }
+
+        // Gemini API key — diambil dari local.properties saat build.
+        buildConfigField "String", "GEMINI_API_KEY", "\"${geminiKey}\""
 
         // Aplikasi ini hanya dipasang di ponsel, jadi pustaka native x86 milik
         // ML Kit (sekitar 12 MB) tidak perlu ikut. Hapus blok ini kalau suatu
@@ -68,8 +70,6 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             if (hasReleaseKeystore) {
                 signingConfig signingConfigs.release
-            } else {
-                signingConfig signingConfigs.debug
             }
         }
     }
@@ -135,9 +135,8 @@ dependencies {
 
     implementation 'com.google.android.gms:play-services-location:21.3.0'
 
-    // Google Gemini API & Networking
+    // Gemini AI: HTTP client ringan untuk REST API.
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
-    implementation 'com.google.code.gson:gson:2.10.1'
 
     debugImplementation 'androidx.compose.ui:ui-tooling'
 }

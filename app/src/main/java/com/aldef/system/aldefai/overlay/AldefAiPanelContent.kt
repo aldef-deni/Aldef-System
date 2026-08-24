@@ -123,6 +123,8 @@ fun AldefAiPanelContent(
     var emptyStreak by remember { mutableIntStateOf(0) }
     // Local-first: AI on-device (bila kelak ada) + fallback mesin aturan.
     val engine = remember { IntentClassifiers.default() }
+    // Gemini AI: fallback cerdas untuk perintah yang tidak dikenali mesin aturan.
+    val gemini = remember { com.aldef.system.aldefai.ai.GeminiChatClient.create() }
 
     val recognizer = remember {
         AndroidSpeechRecognizer(
@@ -228,7 +230,22 @@ fun AldefAiPanelContent(
 
     fun handleIntent(intent: ALDEFAIIntent) {
         when {
-            intent is ALDEFAIIntent.Unknown -> say("Maaf, saya belum mengerti perintah itu.")
+            intent is ALDEFAIIntent.Unknown -> {
+                // Fallback ke Gemini AI jika tersedia.
+                if (gemini != null) {
+                    voiceState = ALDEFAIVoiceState.Processing
+                    scope.launch {
+                        val answer = gemini.ask(intent.text)
+                        if (answer != null) {
+                            say(answer)
+                        } else {
+                            say("Maaf, saya tidak bisa terhubung ke AI saat ini.")
+                        }
+                    }
+                } else {
+                    say("Maaf, saya belum mengerti perintah itu.")
+                }
+            }
             intent.requiresConfirmation -> confirmIntent = intent
             else -> runAction(intent)
         }
